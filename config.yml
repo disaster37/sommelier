@@ -1,0 +1,17 @@
+---
+debug: true
+
+server:
+  address: ":4040"
+
+context:
+  timeout: 2
+
+mongo:
+  host: "localhost"
+  port: "27017"
+  user: "sommelier"
+  pass: "sommelier"
+  database: "sommelier"
+  collection:
+    "wine_estate": "wine_estate"

@@ -25,15 +25,15 @@ func (h *APIError) Code() int {
 	return h.code
 }
 
-func NewAPIError(code int, message string, params ...interface{}) APIError {
-	return APIError{
+func NewAPIError(code int, message string, params ...interface{}) *APIError {
+	return &APIError{
 		code: code,
 		err:  errors_extra.New(fmt.Sprintf(message, params...)),
 	}
 }
 
-func NewAPIErrorWithError(code int, err error) APIError {
-	return APIError{
+func NewAPIErrorWithError(code int, err error) *APIError {
+	return &APIError{
 		code: code,
 		err:  err,
 	}

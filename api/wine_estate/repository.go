@@ -3,7 +3,7 @@ package wineEstate
 import (
 	"context"
 
-	"github.com/sommelier/sommelier/models"
+	"github.com/sommelier/sommelier/v0/models"
 )
 
 // Repository represent the address 's repository contract

@@ -4,11 +4,11 @@ import (
 	"context"
 
 	log "github.com/sirupsen/logrus"
-	"github.com/sommelier/sommelier/address"
-	"github.com/sommelier/sommelier/errors"
-	"github.com/sommelier/sommelier/models"
+	"github.com/sommelier/sommelier/v0/errors"
+	"github.com/sommelier/sommelier/v0/models"
+	"github.com/sommelier/sommelier/v0/api/wine_estate"
 	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/bson"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 type mongoWineEstateRepository struct {
@@ -16,7 +16,7 @@ type mongoWineEstateRepository struct {
 }
 
 // NewMongoWineEstateRepository will create mongo handler that represent the wineEstate.Repository interface
-func NewMongoWineEstateRepository(db *mongo.Database, collection string) (address.Repository, error) {
+func NewMongoWineEstateRepository(db *mongo.Database, collection string) (wineEstate.Repository, error) {
 
 	// Check ans logs parameters
 	if db == nil {
@@ -36,7 +36,7 @@ func NewMongoWineEstateRepository(db *mongo.Database, collection string) (addres
 }
 
 // Fetch permit to get all documents on wine_estate collection
-func (h *mongoWineEstateRepository) Fetch(ctx context.Context) ([]*models.Address, error) {
+func (h *mongoWineEstateRepository) Fetch(ctx context.Context) ([]*models.WineEstate, error) {
 
 	filter := bson.M{}
 	nbDocuments, err := h.Conn.CountDocuments(ctx, filter)
@@ -44,7 +44,7 @@ func (h *mongoWineEstateRepository) Fetch(ctx context.Context) ([]*models.Addres
 		return nil, err
 	}
 
-	wineEstateList := make([]models.Address, 0, nbDocuments)
+	wineEstateList := make([]*models.WineEstate, 0, nbDocuments)
 	cursor, err := h.Conn.Find(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -97,7 +97,7 @@ func (h *mongoWineEstateRepository) GetByID(ctx context.Context, id string) (*mo
 	if log.GetLevel() == log.DebugLevel {
 		log.Debugf("Wine estate: %s", wineEstate)
 	}
-	return wineEstate
+	return wineEstate, nil
 }
 
 // Create permit to add new document on wine_estate collection
@@ -111,7 +111,7 @@ func (h *mongoWineEstateRepository) Create(ctx context.Context, m *models.WineEs
 		log.Debugf("Wine estate: %s", m)
 	}
 
-	res, err := m.Conn.InsertOne(ctx, m)
+	res, err := h.Conn.InsertOne(ctx, m)
 	if err != nil {
 		return "", errors.NewAPIErrorWithError(errors.CodeDBError, err)
 	}
@@ -134,8 +134,8 @@ func (h *mongoWineEstateRepository) Update(ctx context.Context, m *models.WineEs
 		log.Debugf("Wine estate: %s", m)
 	}
 
-	filter := bson.D{{"_id", a.ID}}
-	_, err := m.Conn.ReplaceOne(
+	filter := bson.D{{"_id", m.ID}}
+	_, err := h.Conn.ReplaceOne(
 		ctx,
 		filter,
 		m,
@@ -158,7 +158,7 @@ func (h *mongoWineEstateRepository) Delete(ctx context.Context, id string) error
 	}
 
 	deleteDocument := new(bson.M)
-	err := m.Conn.FindOneAndDelete(
+	err := h.Conn.FindOneAndDelete(
 		ctx,
 		bson.D{{"_id", id}},
 	).Decode(&deleteDocument)
