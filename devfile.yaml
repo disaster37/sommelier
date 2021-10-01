@@ -1,0 +1,73 @@
+apiVersion: 1.0.0
+metadata:
+  name: sommelier-
+projects:
+  - name: sommelier
+    source:
+      location: 'https://github.com/disaster37/sommelier.git'
+      startPoint: 0.x
+      type: git
+components:
+  - id: eclipse/che-theia/latest
+    memoryLimit: 2Gi
+    type: cheEditor
+  - id: eamodio/vscode-gitlens/latest
+    registryUrl: 'https://che-plugin-registry-main.surge.sh/v3'
+    type: chePlugin
+  - id: redhat/vscode-yaml/latest
+    registryUrl: 'https://che-plugin-registry-main.surge.sh/v3'
+    type: chePlugin
+  - id: coenraads/bracket-pair-colorizer/latest
+    registryUrl: 'https://che-plugin-registry-webcenter.surge.sh/v3/'
+    type: chePlugin
+  - id: streetsidesoftware/code-spell-checker/latest
+    registryUrl: 'https://che-plugin-registry-webcenter.surge.sh/v3/'
+    type: chePlugin
+  - id: dsznajder/es7-react-js-snippets/latest
+    registryUrl: 'https://che-plugin-registry-webcenter.surge.sh/v3/'
+    type: chePlugin
+  - cpuLimit: 3000m
+    id: golang/go/latest
+    memoryLimit: 4Gi
+    preferences:
+      go.lintTool: golangci-lint
+      go.useLanguageServer: true
+      go.lintFlags: '--fast'
+    cpuRequest: 500m
+    type: chePlugin
+    registryUrl: 'https://che-plugin-registry-webcenter.surge.sh/v3/'
+    alias: go
+  - mountSources: true
+    memoryLimit: 512Mi
+    type: dockerimage
+    volumes:
+      - name: home
+        containerPath: /home/theia
+    alias: node
+    image: node:16-bullseye
+    env:
+      - value: '/home/theia'
+        name: HOME
+commands:
+  - name: Run current file
+    actions:
+      - workdir: '${fileDirname}'
+        type: exec
+        command: 'go get -d && go run ${file}'
+        component: go
+  - name: Debug current file
+    actions:
+      - referenceContent: |
+          {
+            "version": "0.2.0",
+            "configurations": [
+              {
+                "name": "Debug current file",
+                "type": "go",
+                "request": "launch",
+                "mode": "auto",
+                "program": "${fileDirname}"
+              }
+            ]
+          }
+        type: vscode-launch
