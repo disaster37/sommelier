@@ -4,7 +4,7 @@ metadata:
 projects:
   - name: sommelier
     source:
-      location: 'https://github.com/disaster37/sommelier.git'
+      location: "https://github.com/disaster37/sommelier.git"
       startPoint: 0.x
       type: git
 components:
@@ -12,48 +12,193 @@ components:
     memoryLimit: 2Gi
     type: cheEditor
   - id: eamodio/vscode-gitlens/latest
-    registryUrl: 'https://che-plugin-registry-main.surge.sh/v3'
     type: chePlugin
+    registryUrl: "https://che-plugin-registry-main.surge.sh/v3"
   - id: redhat/vscode-yaml/latest
-    registryUrl: 'https://che-plugin-registry-main.surge.sh/v3'
     type: chePlugin
+    registryUrl: "https://che-plugin-registry-main.surge.sh/v3"
   - id: coenraads/bracket-pair-colorizer/latest
-    registryUrl: 'https://che-plugin-registry-webcenter.surge.sh/v3/'
     type: chePlugin
+    registryUrl: "https://che-plugin-registry-webcenter.surge.sh/v3/"
   - id: streetsidesoftware/code-spell-checker/latest
-    registryUrl: 'https://che-plugin-registry-webcenter.surge.sh/v3/'
     type: chePlugin
+    registryUrl: "https://che-plugin-registry-webcenter.surge.sh/v3/"
   - id: dsznajder/es7-react-js-snippets/latest
-    registryUrl: 'https://che-plugin-registry-webcenter.surge.sh/v3/'
     type: chePlugin
+    registryUrl: "https://che-plugin-registry-webcenter.surge.sh/v3/"
   - cpuLimit: 3000m
     id: golang/go/latest
     memoryLimit: 4Gi
     preferences:
       go.lintTool: golangci-lint
       go.useLanguageServer: true
-      go.lintFlags: '--fast'
+      go.lintFlags: "--fast"
     cpuRequest: 500m
     type: chePlugin
-    registryUrl: 'https://che-plugin-registry-webcenter.surge.sh/v3/'
-    alias: go
+    registryUrl: "https://che-plugin-registry-webcenter.surge.sh/v3/"
   - mountSources: true
+    endpoints:
+      - attributes:
+          requireSubdomain: "true"
+          discoverable: "true"
+          secure: "false"
+          public: "true"
+          protocol: http
+        name: web
+        port: 3000
+    command:
+      - sleep
+    args:
+      - infinity
     memoryLimit: 512Mi
     type: dockerimage
     volumes:
       - name: home
         containerPath: /home/theia
     alias: node
-    image: node:16-bullseye
+    image: "node:16-bullseye"
     env:
-      - value: '/home/theia'
+      - value: /home/theia
         name: HOME
+  - mountSources: true
+    endpoints:
+      - attributes:
+          requireSubdomain: "true"
+          discoverable: "true"
+          secure: "false"
+          public: "true"
+          protocol: http
+        name: api
+        port: 4040
+    command:
+      - sleep
+    args:
+      - infinity
+    memoryLimit: 512Mi
+    type: dockerimage
+    volumes:
+      - name: home
+        containerPath: /home/theia
+    alias: go
+    image: "golang:1.16-bullseye"
+    env:
+      - value: /home/theia
+        name: HOME
+  - mountSources: false
+    referenceContent: |
+      apiVersion: v1
+      kind: List
+      items:
+        - apiVersion: v1
+          kind: Deployment
+          metadata:
+            name: mongo
+            label:
+              app: mongo
+          spec:
+            selector:
+              matchLabels:
+                app: mongo
+            template:
+              metadata:
+                labels:
+                  app: mongo
+              spec:
+                containers:
+                  - image: mongo:4
+                    securityContext:
+                      runAsUser: 999
+                    name: mongo
+                    ports:
+                      - name: mongo
+                        containerPort: 27017
+                    env:
+                      - value: mongo
+                        name: MONGO_INITDB_ROOT_USERNAME
+                      - value: changeme
+                        name: MONGO_INITDB_ROOT_PASSWORD
+                      - value: sommelier-test
+                        name: MONGO_INITDB_DATABASE
+                    imagePullPolicy: Always
+                    resources:
+                      limits:
+                        memory: 512Mi
+                        cpu: 500m
+        - apiVersion: v1
+          kind: Service
+          metadata:
+            name: mongo
+          spec:
+            ports:
+              - port: 27017
+                targetPort: mongo
+            selector:
+              app: mongo
+    type: kubernetes
+    alias: mongo
+  - mountSources: false
+    referenceContent: |
+      apiVersion: v1
+      kind: List
+      items:
+        - apiVersion: v1
+          kind: Deployment
+          metadata:
+            name: es
+            label:
+              app: es
+          spec:
+            selector:
+              matchLabels:
+                app: es
+            template:
+              metadata:
+                labels:
+                  app: es
+              spec:
+                containers:
+                  - image: docker.elastic.co/elasticsearch/elasticsearch:7.15.1
+                    name: es
+                    ports:
+                      - name: es
+                        containerPort: 9200
+                    env:
+                      - value: "-Xmx512m -Xms512m"
+                        name: ES_JAVA_OPTS
+                      - value: 0.0.0.0
+                        name: network.host
+                      - value: sommelier-test
+                        name: cluster.name
+                      - value: changeme
+                        name: ELASTIC_PASSWORD
+                      - value: single-node
+                        name: discovery.type
+                    resources:
+                      limits:
+                        memory: 1Gi
+                        cpu: 500m
+                    imagePullPolicy: IfNotPresent
+
+        - apiVersion: v1
+          kind: Service
+          metadata:
+            name: es
+          spec:
+            ports:
+              - port: 9200
+                targetPort: es
+            selector:
+              app: es
+    type: kubernetes
+    alias: es
+  - id: redhat/vscode-xml/latest
+    type: chePlugin
 commands:
   - name: Run current file
     actions:
-      - workdir: '${fileDirname}'
+      - workdir: "${fileDirname}"
         type: exec
-        command: 'go get -d && go run ${file}'
+        command: "go get -d && go run ${file}"
         component: go
   - name: Debug current file
     actions:
